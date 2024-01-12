@@ -153,7 +153,7 @@ func NewResponseLoggingHandler(next http.HandlerFunc) http.HandlerFunc {
 func main() {
 	fmt.Println("Starting...")
 
-	st := storage.NewFs("C:\\Users\\raul\\GolandProjects\\cloud\\.attic\\fs")
+	st := storage.NewFs("/files")
 
 	webdavHandler := webdav.NewXwebdavHandler(st)
 
