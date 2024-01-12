@@ -3,8 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/aulaga/cloud/src/domain/storage"
-	"github.com/aulaga/cloud/src/webdav"
+	"github.com/aulaga/cloud/src"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"net/http/httptest"
@@ -52,7 +51,7 @@ type NextcloudPollAuth struct {
 }
 
 func (h BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	webdav.DebugRequest(w, r)
+	audav.DebugRequest(w, r)
 
 	// TODO handle basic auth
 	for k, v := range r.Header {
@@ -153,9 +152,8 @@ func NewResponseLoggingHandler(next http.HandlerFunc) http.HandlerFunc {
 func main() {
 	fmt.Println("Starting...")
 
-	st := storage.NewFs("/files")
-
-	webdavHandler := webdav.NewXwebdavHandler(st)
+	defaultProvider := audav.NewDefaultStorageProvider()
+	webdavHandler := audav.NewWebdavHandler(defaultProvider)
 
 	chi.RegisterMethod("PROPFIND")
 	chi.RegisterMethod("PROPPATCH")

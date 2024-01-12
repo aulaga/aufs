@@ -1,18 +1,21 @@
 package storage
 
-import "fmt"
+import (
+	"fmt"
+	aufs "github.com/aulaga/cloud/src/filesystem"
+)
 
 type Mount interface {
-	Storage() Storage
+	Storage() aufs.Storage
 	Point() string
 }
 
 type mount struct {
-	storage Storage
+	storage aufs.Storage
 	point   string
 }
 
-func (m mount) Storage() Storage {
+func (m mount) Storage() aufs.Storage {
 	return m.storage
 }
 
@@ -22,13 +25,13 @@ func (m mount) Point() string {
 
 type Filesystem struct {
 	id     string
-	root   Storage
+	root   aufs.Storage
 	mounts []Mount
 }
 
-var _ Storage = &Filesystem{}
+var _ aufs.Storage = &Filesystem{}
 
-func NewFilesystem(id string, root Storage) *Filesystem {
+func NewFilesystem(id string, root aufs.Storage) *Filesystem {
 	return &Filesystem{
 		id:   id,
 		root: root,
@@ -39,11 +42,11 @@ func (f *Filesystem) Id() string {
 	return f.id
 }
 
-func (f *Filesystem) StorageForPath(path string) Storage {
+func (f *Filesystem) StorageForPath(path string) aufs.Storage {
 	return f.root // TODO implement mounted storages
 }
 
-func (f *Filesystem) Open(path string) (File, error) {
+func (f *Filesystem) Open(path string) (aufs.File, error) {
 	storage := f.StorageForPath(path)
 	file, err := storage.Open(path)
 
@@ -54,12 +57,12 @@ func (f *Filesystem) Open(path string) (File, error) {
 	return file, err
 }
 
-func (f *Filesystem) MkDir(path string) (*NodeInfo, error) {
+func (f *Filesystem) MkDir(path string) (*aufs.NodeInfo, error) {
 	storage := f.StorageForPath(path)
 	return storage.MkDir(path)
 }
 
-func (f *Filesystem) Stat(path string) (*NodeInfo, error) {
+func (f *Filesystem) Stat(path string) (*aufs.NodeInfo, error) {
 	storage := f.StorageForPath(path)
 	return storage.Stat(path)
 }
@@ -105,7 +108,7 @@ func (f *Filesystem) Move(srcPath string, dstPath string) error {
 	return srcStorage.Delete(srcPath)
 }
 
-func (f *Filesystem) ListDir(path string, recursive bool) ([]*NodeInfo, error) {
+func (f *Filesystem) ListDir(path string, recursive bool) ([]*aufs.NodeInfo, error) {
 	storage := f.StorageForPath(path)
 	return storage.ListDir(path, recursive)
 }
