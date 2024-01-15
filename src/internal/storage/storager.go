@@ -6,31 +6,33 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	aufs "github.com/aulaga/cloud/src/filesystem"
 	webdav "github.com/aulaga/webdav"
-	"go.beyondstorage.io/v5/pairs"
-	"go.beyondstorage.io/v5/types"
+	"github.com/beyondstorage/go-storage/v4/pairs"
+	"github.com/beyondstorage/go-storage/v4/types"
 	"io"
 	"io/fs"
 	"os"
+	"strings"
 )
 
 type Object = types.Object
 
-func getObjectInfo(node *Object) *NodeInfo {
+func getObjectInfo(node *Object) aufs.NodeInfo {
 	contentLength, _ := node.GetContentLength()
 	lastModified, _ := node.GetLastModified()
 	isDir := node.GetMode().IsDir()
 	mimeType, _ := node.GetContentType()
 	etag, _ := node.GetEtag()
 
-	return &NodeInfo{
-		path:     node.GetPath(),
-		size:     contentLength,
-		modTime:  lastModified,
-		isDir:    isDir,
-		mimeType: mimeType,
-		etag:     etag,
-	}
+	return aufs.NewNodeInfo(
+		node.GetPath(),
+		contentLength,
+		lastModified,
+		isDir,
+		mimeType,
+		etag,
+	)
 }
 
 type file struct {
@@ -60,9 +62,9 @@ func (f *file) PropFn(name xml.Name) (func(context.Context, webdav.FileSystem, w
 	return nil, false
 }
 
-var _ File = &file{}
+var _ aufs.File = &file{}
 
-func newFile(storage StoragerWrapper, path string) File {
+func newFile(storage StoragerWrapper, path string) aufs.File {
 	return &file{
 		id:      path,
 		path:    path,
@@ -79,7 +81,7 @@ func (f *file) Path() string {
 	return f.id
 }
 
-func (f *file) Storage() Storage {
+func (f *file) Storage() aufs.Storage {
 	return f.storage
 }
 
@@ -155,7 +157,7 @@ type StoragerWrapper struct {
 	storager types.Storager
 }
 
-func NewStorager(id string, storager types.Storager) Storage {
+func NewStorager(id string, storager types.Storager) aufs.Storage {
 	return &StoragerWrapper{
 		id:       id,
 		storager: storager,
@@ -166,12 +168,18 @@ func (s StoragerWrapper) Id() string {
 	return s.storager.String()
 }
 
-func (s StoragerWrapper) Open(path string) (File, error) {
+func sanitizePath(path string) string {
+	return strings.TrimLeft(path, "/\\")
+}
+
+func (s StoragerWrapper) Open(path string) (aufs.File, error) {
+	path = sanitizePath(path)
 	f := newFile(s, path)
 	return f, nil
 }
 
-func (s StoragerWrapper) Stat(path string) (*NodeInfo, error) {
+func (s StoragerWrapper) Stat(path string) (aufs.NodeInfo, error) {
+	path = sanitizePath(path)
 	obj, err := s.storager.Stat(path)
 	if err != nil {
 		return nil, err
@@ -181,11 +189,13 @@ func (s StoragerWrapper) Stat(path string) (*NodeInfo, error) {
 }
 
 func (s StoragerWrapper) Delete(path string) error {
+	path = sanitizePath(path)
 	return s.storager.Delete(path)
 }
 
 func (s StoragerWrapper) Copy(srcPath string, dstPath string) error {
-	fmt.Println("Copy")
+	srcPath = sanitizePath(srcPath)
+	dstPath = sanitizePath(dstPath)
 	info, err := s.Stat(srcPath)
 	if err != nil {
 		return err
@@ -206,6 +216,8 @@ func (s StoragerWrapper) Copy(srcPath string, dstPath string) error {
 
 // TODO implement Move between different storages
 func (s StoragerWrapper) Move(srcPath string, dstPath string) error {
+	srcPath = sanitizePath(srcPath)
+	dstPath = sanitizePath(dstPath)
 	mover, ok := s.storager.(types.Mover)
 	if !ok {
 		return fmt.Errorf("MoveOperation failed, storage not a copier")
@@ -214,14 +226,15 @@ func (s StoragerWrapper) Move(srcPath string, dstPath string) error {
 	return mover.Move(srcPath, dstPath)
 }
 
-func (s StoragerWrapper) ListDir(path string, recursive bool) ([]*NodeInfo, error) {
+func (s StoragerWrapper) ListDir(path string, recursive bool) ([]aufs.NodeInfo, error) {
+	path = sanitizePath(path)
 	// TODO for recursion maybe listmode prefix can be used here
 	iterator, err := s.storager.List(path, pairs.WithListMode(types.ListModeDir))
 	if err != nil {
 		return nil, err
 	}
 
-	var infos []*NodeInfo
+	var infos []aufs.NodeInfo
 	for obj, err := iterator.Next(); obj != nil; obj, err = iterator.Next() {
 		if err != nil && errors.Is(err, types.IterateDone) {
 			break
@@ -237,7 +250,8 @@ func (s StoragerWrapper) ListDir(path string, recursive bool) ([]*NodeInfo, erro
 	return infos, nil
 }
 
-func (s StoragerWrapper) MkDir(path string) (*NodeInfo, error) {
+func (s StoragerWrapper) MkDir(path string) (aufs.NodeInfo, error) {
+	path = sanitizePath(path)
 	direr, ok := s.storager.(types.Direr)
 	if !ok {
 		return nil, fmt.Errorf("mkdir operation failed, storage is not direr")

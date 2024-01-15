@@ -1,4 +1,5 @@
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
+github.com/beyondstorage/go-integration-test/v4 v4.4.0 h1:wiItWmhoAY71Fp76u6u95jJn5m6swM9N/xNV9mW7nyI=
 github.com/dave/gopackages v0.0.0-20170318123100-46e7023ec56e h1:l99YKCdrK4Lvb/zTupt0GMPfNbncAGf8Cv/t1sYLOg0=
 github.com/dave/jennifer v1.2.0 h1:S15ZkFMRoJ36mGAQgWL1tnr0NQJh9rZ8qatseX/VbBc=
 github.com/dave/kerr v0.0.0-20170318121727-bc25dd6abe8e h1:xURkGi4RydhyaYR6PzcyHTueQudxY4LgxN1oYEPJHa0=
