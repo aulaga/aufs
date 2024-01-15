@@ -169,7 +169,7 @@ func main() {
 	r.Mount("/index.php", ncHandler)
 	r.Mount("/", ncHandler)
 	r.Mount("/dav", webdavHandler)
-	err := http.ListenAndServe("localhost:8080", r)
+	err := http.ListenAndServe("0.0.0.0:8080", r)
 	if err != nil {
 		panic(err.Error())
 	}

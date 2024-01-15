@@ -3,22 +3,10 @@ package storage
 import (
 	"fmt"
 	aufs "github.com/aulaga/cloud/src/filesystem"
-	"go.beyondstorage.io/services/fs/v4"
-	"go.beyondstorage.io/v5/pairs"
 	"io"
 	"path/filepath"
 	"strings"
 )
-
-// TODO remove this function, provide proper storage initialisation
-func NewFs(path string) aufs.Storage {
-	storager, err := fs.NewStorager(pairs.WithWorkDir(path))
-	if err != nil {
-		panic(err.Error())
-	}
-
-	return NewStorager("tempId", storager)
-}
 
 func CreateFile(storage aufs.Storage, path string, reader io.Reader) error {
 	file, err := storage.Open(path)
@@ -78,19 +66,23 @@ func ManualCopy(srcStorage aufs.Storage, dstStorage aufs.Storage, srcPath string
 }
 
 func ManualDelete(storage aufs.Storage, path string) error {
+	if path == "" || path == "." {
+		return fmt.Errorf("cannot delete root of path")
+	}
+
 	info, err := storage.Stat(path)
 	if err != nil {
 		return err // TODO file doesnt exist?
 	}
 
-	deleteFn := func(storage aufs.Storage, info *aufs.NodeInfo) error {
+	deleteFn := func(storage aufs.Storage, info aufs.NodeInfo) error {
 		return storage.Delete(info.Path())
 	}
 
 	return walkFs(storage, info, deleteFn)
 }
 
-func walkFs(storage aufs.Storage, info *aufs.NodeInfo, operationFunc func(aufs.Storage, *aufs.NodeInfo) error) error {
+func walkFs(storage aufs.Storage, info aufs.NodeInfo, operationFunc func(aufs.Storage, aufs.NodeInfo) error) error {
 	if info.IsDir() {
 		infos, err := storage.ListDir(info.Path(), false)
 		if err != nil {

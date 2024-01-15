@@ -8,40 +8,26 @@ import (
 	"time"
 )
 
-// TODO remove from here
-
-type SampleFs struct {
-}
-
-func (s SampleFs) Root() StorageSpec {
-	return StorageSpec{
-		Uri: "local:///aulaga/files",
-	}
-}
-
-func (s SampleFs) Mounts() []MountSpec {
-	return nil
-}
-
-type StorageProvider interface {
-	ProvideFileSystem(FileSystemSpec) (Storage, error)
-	ProvideStorage(StorageSpec) (Storage, error)
-}
-
-// TODO remove above
-
 type StorageSpec struct {
+	Id  string
 	Uri string
 }
 
 type MountSpec struct {
-	StorageSpec
+	Storage    StorageSpec
 	MountPoint string
 }
 
 type FileSystemSpec interface {
 	Root() StorageSpec
 	Mounts() []MountSpec
+	Listener() EventListener
+}
+
+type EventListener interface {
+	Moved(src string, dst string)
+	Changed(path string) // modified or created
+	Deleted(path string)
 }
 
 type Node interface {
@@ -55,18 +41,37 @@ type File interface {
 	webdav.CustomPropsHolder
 }
 
+type Filesystem interface {
+	Storage
+	AddEventListener(listener EventListener)
+	FlushEvents()
+}
+
 type Storage interface {
 	Id() string
 	Open(path string) (File, error)
-	Stat(path string) (*NodeInfo, error)
+	Stat(path string) (NodeInfo, error)
 	Delete(path string) error
 	Copy(srcPath string, dstPath string) error
 	Move(srcPath string, dstPath string) error
-	ListDir(path string, recursive bool) ([]*NodeInfo, error)
-	MkDir(path string) (*NodeInfo, error)
+	ListDir(path string, recursive bool) ([]NodeInfo, error)
+	MkDir(path string) (NodeInfo, error)
 }
 
-type NodeInfo struct {
+type Mount interface {
+	Storage() Storage
+	Point() string
+}
+
+type NodeInfo interface {
+	fs.FileInfo
+	webdav.ContentTyper
+	MimeType() string
+	ETag() string
+	Path() string
+}
+
+type nodeInfo struct {
 	path     string
 	size     int64
 	modTime  time.Time
@@ -75,11 +80,11 @@ type NodeInfo struct {
 	etag     string
 }
 
-var _ fs.FileInfo = &NodeInfo{}
-var _ webdav.ContentTyper = &NodeInfo{}
+var _ fs.FileInfo = &nodeInfo{}
+var _ webdav.ContentTyper = &nodeInfo{}
 
-func NewNodeInfo(path string, size int64, modTime time.Time, isDir bool, mimeType string, etag string) *NodeInfo {
-	return &NodeInfo{
+func NewNodeInfo(path string, size int64, modTime time.Time, isDir bool, mimeType string, etag string) NodeInfo {
+	return &nodeInfo{
 		path:     path,
 		size:     size,
 		modTime:  modTime,
@@ -89,19 +94,19 @@ func NewNodeInfo(path string, size int64, modTime time.Time, isDir bool, mimeTyp
 	}
 }
 
-func (n *NodeInfo) Name() string {
+func (n *nodeInfo) Name() string {
 	return filepath.Base(n.path)
 }
 
-func (n *NodeInfo) Path() string {
+func (n *nodeInfo) Path() string {
 	return n.path
 }
 
-func (n *NodeInfo) Size() int64 {
+func (n *nodeInfo) Size() int64 {
 	return n.size
 }
 
-func (n *NodeInfo) Mode() fs.FileMode {
+func (n *nodeInfo) Mode() fs.FileMode {
 	if n.IsDir() {
 		return fs.ModeDir
 	}
@@ -109,26 +114,26 @@ func (n *NodeInfo) Mode() fs.FileMode {
 	return 0
 }
 
-func (n *NodeInfo) ModTime() time.Time {
+func (n *nodeInfo) ModTime() time.Time {
 	return n.modTime
 }
 
-func (n *NodeInfo) IsDir() bool {
+func (n *nodeInfo) IsDir() bool {
 	return n.isDir
 }
 
-func (n *NodeInfo) MimeType() string {
+func (n *nodeInfo) MimeType() string {
 	return n.mimeType
 }
 
-func (n *NodeInfo) ContentType(ctx context.Context) (string, error) {
+func (n *nodeInfo) ContentType(ctx context.Context) (string, error) {
 	return n.mimeType, nil
 }
 
-func (n *NodeInfo) ETag() string {
+func (n *nodeInfo) ETag() string {
 	return n.etag
 }
 
-func (n *NodeInfo) Sys() any {
+func (n *nodeInfo) Sys() any {
 	return n
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	aufs "github.com/aulaga/cloud/src/filesystem"
-	"github.com/aulaga/cloud/src/internal/storage"
 	"github.com/aulaga/webdav"
 	"io"
 	"log"
@@ -12,41 +11,6 @@ import (
 	"os"
 	"strings"
 )
-
-type DefaultStorageProvider struct {
-	storages map[aufs.StorageSpec]aufs.Storage
-}
-
-func NewDefaultStorageProvider() aufs.StorageProvider {
-	return &DefaultStorageProvider{storages: map[aufs.StorageSpec]aufs.Storage{}}
-}
-
-func (p *DefaultStorageProvider) ProvideFileSystem(spec aufs.FileSystemSpec) (aufs.Storage, error) {
-	rootAuStorage := spec.Root()
-	rootStorage, err := p.ProvideStorage(rootAuStorage)
-	if err != nil {
-		return nil, err
-	}
-
-	return storage.NewFilesystem("", rootStorage), nil
-}
-
-func (p *DefaultStorageProvider) ProvideStorage(spec aufs.StorageSpec) (aufs.Storage, error) {
-	st, ok := p.storages[spec]
-	if ok {
-		fmt.Println("found storage in cache")
-		return st, nil
-	}
-
-	fmt.Println("creating storage")
-	st, err := storage.CreateStorageFromAuFs(spec)
-	if err != nil {
-		return nil, err
-	}
-
-	p.storages[spec] = st
-	return st, nil
-}
 
 func DebugRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("")
@@ -79,23 +43,21 @@ type FileSystem struct {
 
 var _ webdav.FileSystem = &FileSystem{}
 
-func newFileSystem(storageProvider aufs.StorageProvider) webdav.FileSystem {
+func newFileSystem(storageProvider aufs.StorageProvider) *FileSystem {
 	return &FileSystem{storageProvider: storageProvider}
 }
 
-func (f FileSystem) fsFromContext(ctx context.Context) (aufs.Storage, error) {
+func (f FileSystem) fsFromContext(ctx context.Context) (aufs.Filesystem, error) {
 	ctxVal := ctx.Value(CtxAulagaFs)
 	fsSpec, ok := ctxVal.(aufs.FileSystemSpec)
 	if !ok {
 		return nil, fmt.Errorf("aulaga filesystem not in context") // TODO type-wrap this error
 	}
-	fmt.Println("fsFromContext", fsSpec.Root().Uri)
 
 	return f.storageProvider.ProvideFileSystem(fsSpec)
 }
 
 func (f FileSystem) OpenFile(ctx context.Context, name string, flag int, perm os.FileMode) (webdav.File, error) {
-	fmt.Println("Open", name)
 	fs, err := f.fsFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -110,7 +72,6 @@ func (f FileSystem) OpenFile(ctx context.Context, name string, flag int, perm os
 }
 
 func (f FileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error) {
-	fmt.Println("Stat", name)
 	fs, err := f.fsFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -125,17 +86,15 @@ func (f FileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error) 
 }
 
 func (f FileSystem) RemoveAll(ctx context.Context, name string) error {
-	fmt.Println("RemoveAll")
 	fs, err := f.fsFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return storage.ManualDelete(fs, name)
+	return fs.Delete(name)
 }
 
 func (f FileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
-	fmt.Println("Mkdir")
 	fs, err := f.fsFromContext(ctx)
 	if err != nil {
 		return err
@@ -146,7 +105,6 @@ func (f FileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) er
 }
 
 func (f FileSystem) Rename(ctx context.Context, oldName, newName string) error {
-	fmt.Println("Move")
 	fs, err := f.fsFromContext(ctx)
 	if err != nil {
 		return err
@@ -183,7 +141,8 @@ func (c *CaptureResponseWriter) WriteHeader(statusCode int) {
 }
 
 type MyHandler struct {
-	h http.Handler
+	h  http.Handler
+	fs *FileSystem
 }
 
 func (m MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -198,6 +157,11 @@ func (m MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	captureW := &CaptureResponseWriter{w: w}
 	m.h.ServeHTTP(captureW, r)
 	captureW.Print()
+
+	aufs, err := m.fs.fsFromContext(ctx)
+	if err == nil {
+		aufs.FlushEvents()
+	}
 }
 
 func NewWebdavHandler(provider aufs.StorageProvider) http.Handler {
@@ -216,5 +180,5 @@ func NewWebdavHandler(provider aufs.StorageProvider) http.Handler {
 		},
 	}
 
-	return &MyHandler{webdavHandler}
+	return &MyHandler{webdavHandler, fs}
 }
