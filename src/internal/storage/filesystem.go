@@ -1,13 +1,9 @@
 package storage
 
 import (
-	"context"
-	"encoding/xml"
 	"fmt"
 	aufs "github.com/aulaga/cloud/src/filesystem"
-	"github.com/aulaga/webdav"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -228,12 +224,4 @@ func (f fsFile) Stat() (fs.FileInfo, error) {
 
 func (f fsFile) Write(p []byte) (n int, err error) {
 	return 0, fmt.Errorf("cannot write to filesystem")
-}
-
-func (f fsFile) Props() []xml.Name {
-	return nil
-}
-
-func (f fsFile) PropFn(name xml.Name) (func(context.Context, webdav.FileSystem, webdav.LockSystem, string, os.FileInfo) (string, error), bool) {
-	return nil, false
 }

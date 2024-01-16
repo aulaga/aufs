@@ -2,17 +2,13 @@ package storage
 
 import (
 	"bytes"
-	"context"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	aufs "github.com/aulaga/cloud/src/filesystem"
-	webdav "github.com/aulaga/webdav"
 	"github.com/beyondstorage/go-storage/v4/pairs"
 	"github.com/beyondstorage/go-storage/v4/types"
 	"io"
 	"io/fs"
-	"os"
 	"strings"
 )
 
@@ -40,26 +36,6 @@ type file struct {
 	path    string
 	storage StoragerWrapper
 	offset  int64
-}
-
-func (f *file) Props() []xml.Name {
-	return []xml.Name{}
-}
-
-func (f *file) PropFn(name xml.Name) (func(context.Context, webdav.FileSystem, webdav.LockSystem, string, os.FileInfo) (string, error), bool) {
-	o, err := f.storager().Stat(f.Path())
-	if err != nil {
-		return nil, false
-	}
-	info := getObjectInfo(o)
-
-	if name.Local == "mimetype" {
-		return func(context.Context, webdav.FileSystem, webdav.LockSystem, string, os.FileInfo) (string, error) {
-			return info.MimeType(), nil
-		}, true
-	}
-
-	return nil, false
 }
 
 var _ aufs.File = &file{}

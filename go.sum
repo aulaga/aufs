@@ -3,8 +3,6 @@ github.com/Xuanwo/templateutils v0.1.0/go.mod h1:OdE0DJ+CJxDBq6psX5DPV+gOZi8bhuH
 github.com/beyondstorage/go-integration-test/v4 v4.4.0/go.mod h1:o0pHhyaRR/OO6QxnRqWW3aFjTycBZjoKSdHKN/JZRjo=
 github.com/beyondstorage/go-service-fs/v3 v3.5.0 h1:U052kUvrlWIKahXSMN1sIZQ+A/k0ZXSXYnCr20XVpag=
 github.com/beyondstorage/go-service-fs/v3 v3.5.0/go.mod h1:/IdIBLNlnj8FOfBhwc3CUYgz42/7sa1viqu7NnHRT+0=
-github.com/beyondstorage/go-service-memory v0.3.0 h1:T5d+oJXs4WPp5qTDwbNk23SZfsNURPONJUvp9W0r9+Y=
-github.com/beyondstorage/go-service-memory v0.3.0/go.mod h1:m5vYYzOQNflKJNGkzxi+LHy6mvIN/zSyUSovCn+9tCk=
 github.com/beyondstorage/go-storage/v4 v4.7.0 h1:7hpRFNoPY0vWRSH/p2biD2dUQdZMrs1TuIkkqDefmCE=
 github.com/beyondstorage/go-storage/v4 v4.7.0/go.mod h1:mc9VzBImjXDg1/1sLfta2MJH79elfM6m47ZZvZ+q/Uw=
 github.com/dave/dst v0.26.2 h1:lnxLAKI3tx7MgLNVDirFCsDTlTG9nKTk7GcptKcWSwY=

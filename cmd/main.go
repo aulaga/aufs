@@ -51,8 +51,6 @@ type NextcloudPollAuth struct {
 }
 
 func (h BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	audav.DebugRequest(w, r)
-
 	// TODO handle basic auth
 	for k, v := range r.Header {
 		fmt.Println(k, v)

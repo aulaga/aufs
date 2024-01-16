@@ -2,7 +2,7 @@ package aufs
 
 import (
 	"context"
-	"github.com/aulaga/webdav"
+	"golang.org/x/net/webdav"
 	"io/fs"
 	"path/filepath"
 	"time"
@@ -38,7 +38,6 @@ type Node interface {
 type File interface {
 	Node
 	webdav.File
-	webdav.CustomPropsHolder
 }
 
 type Filesystem interface {

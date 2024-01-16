@@ -1,13 +1,9 @@
 package storage
 
 import (
-	"context"
-	"encoding/xml"
 	"fmt"
 	aufs "github.com/aulaga/cloud/src/filesystem"
-	"github.com/aulaga/webdav"
 	"io/fs"
-	"os"
 )
 
 type EventFile struct {
@@ -50,14 +46,6 @@ func (e EventFile) Write(p []byte) (n int, err error) {
 		e.propagator.AddEvent(ChangedEvent(e.path))
 	}
 	return e.file.Write(p)
-}
-
-func (e EventFile) Props() []xml.Name {
-	return e.file.Props()
-}
-
-func (e EventFile) PropFn(name xml.Name) (func(context.Context, webdav.FileSystem, webdav.LockSystem, string, os.FileInfo) (string, error), bool) {
-	return e.PropFn(name)
 }
 
 type Event interface {

@@ -4,36 +4,11 @@ import (
 	"context"
 	"fmt"
 	aufs "github.com/aulaga/cloud/src/filesystem"
-	"github.com/aulaga/webdav"
-	"io"
+	"golang.org/x/net/webdav"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
-
-func DebugRequest(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("")
-	fmt.Println("BasicHandler", r.Method, r.URL.Path)
-	fmt.Println("form", r.Form.Encode())
-	fmt.Println("postform", r.PostForm.Encode())
-	fmt.Println("query", r.URL.RawQuery)
-	fmt.Println("Header values")
-
-	// Unknown request print body
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		panic(err.Error())
-	}
-	if len(bodyBytes) < 1000 {
-		fmt.Println("Body", string(bodyBytes))
-	} else {
-		fmt.Println("Body too long to print")
-	}
-
-	bodyReader := strings.NewReader(string(bodyBytes))
-	r.Body = io.NopCloser(bodyReader)
-}
 
 const CtxAulagaFs = "aulaga_fs"
 
@@ -146,8 +121,6 @@ type MyHandler struct {
 }
 
 func (m MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	DebugRequest(w, r)
-
 	fs := &aufs.SampleFs{}
 
 	ctx := r.Context()
@@ -158,9 +131,9 @@ func (m MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.h.ServeHTTP(captureW, r)
 	captureW.Print()
 
-	aufs, err := m.fs.fsFromContext(ctx)
+	aulagaFs, err := m.fs.fsFromContext(ctx)
 	if err == nil {
-		aufs.FlushEvents()
+		aulagaFs.FlushEvents()
 	}
 }
 
