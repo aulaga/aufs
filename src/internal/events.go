@@ -1,8 +1,8 @@
-package storage
+package internal
 
 import (
 	"fmt"
-	aufs "github.com/aulaga/cloud/src/filesystem"
+	aufs "github.com/aulaga/cloud/src"
 	"io/fs"
 )
 
@@ -41,7 +41,6 @@ func (e EventFile) Stat() (fs.FileInfo, error) {
 }
 
 func (e EventFile) Write(p []byte) (n int, err error) {
-	fmt.Println("[EventFile] Writing...", len(p))
 	if len(p) > 0 {
 		e.propagator.AddEvent(ChangedEvent(e.path))
 	}

@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/aulaga/cloud/src"
+	"github.com/aulaga/cloud/src/storager"
+	"github.com/aulaga/cloud/src/webdav"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"net/http/httptest"
@@ -150,8 +151,8 @@ func NewResponseLoggingHandler(next http.HandlerFunc) http.HandlerFunc {
 func main() {
 	fmt.Println("Starting...")
 
-	defaultProvider := audav.NewDefaultStorageProvider()
-	webdavHandler := audav.NewWebdavHandler(defaultProvider)
+	defaultProvider := storager.Provider()
+	webdavHandler := webdav.NewWebdavHandler(defaultProvider)
 
 	chi.RegisterMethod("PROPFIND")
 	chi.RegisterMethod("PROPPATCH")

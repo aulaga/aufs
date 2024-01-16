@@ -62,6 +62,11 @@ type Mount interface {
 	Point() string
 }
 
+type StorageProvider interface {
+	ProvideFileSystem(FileSystemSpec) (Filesystem, error)
+	ProvideStorage(StorageSpec) (Storage, error)
+}
+
 type NodeInfo interface {
 	fs.FileInfo
 	webdav.ContentTyper

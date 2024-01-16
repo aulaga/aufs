@@ -1,12 +1,13 @@
-package storage
+package storager
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	aufs "github.com/aulaga/cloud/src/filesystem"
-	"github.com/beyondstorage/go-storage/v4/pairs"
-	"github.com/beyondstorage/go-storage/v4/types"
+	aufs "github.com/aulaga/cloud/src"
+	"github.com/aulaga/cloud/src/internal"
+	"go.beyondstorage.io/v5/pairs"
+	"go.beyondstorage.io/v5/types"
 	"io"
 	"io/fs"
 	"strings"
@@ -179,7 +180,7 @@ func (s StoragerWrapper) Copy(srcPath string, dstPath string) error {
 
 	// If source node is a folder we need to manually copy, storager does not allow copying file structures.
 	if info.IsDir() {
-		return ManualCopy(s, s, srcPath, dstPath)
+		return internal.ManualCopy(s, s, srcPath, dstPath)
 	}
 
 	copier, ok := s.storager.(types.Copier)

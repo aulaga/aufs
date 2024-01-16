@@ -1,11 +1,11 @@
-package audav
+package storager
 
 import (
 	"fmt"
-	aufs "github.com/aulaga/cloud/src/filesystem"
-	"github.com/aulaga/cloud/src/internal/storage"
-	_ "github.com/beyondstorage/go-service-fs/v3"
-	"github.com/beyondstorage/go-storage/v4/services"
+	"github.com/aulaga/cloud/src"
+	"github.com/aulaga/cloud/src/internal"
+	_ "go.beyondstorage.io/services/fs/v4"
+	"go.beyondstorage.io/v5/services"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ type DefaultStorageProvider struct {
 	storages    map[aufs.StorageSpec]aufs.Storage
 }
 
-func NewDefaultStorageProvider() aufs.StorageProvider {
+func Provider() aufs.StorageProvider {
 	return &DefaultStorageProvider{
 		filesystems: map[aufs.FileSystemSpec]aufs.Filesystem{},
 		storages:    map[aufs.StorageSpec]aufs.Storage{},
@@ -65,7 +65,7 @@ func (p *DefaultStorageProvider) ProvideFileSystem(spec aufs.FileSystemSpec) (au
 	}
 
 	id := spec.Root().Id
-	fs = storage.NewFilesystem(id, rootStorage, mounts)
+	fs = internal.NewFilesystem(id, rootStorage, mounts)
 	listener := spec.Listener()
 	if listener != nil {
 		fs.AddEventListener(listener)
@@ -89,6 +89,6 @@ func (p *DefaultStorageProvider) ProvideStorage(spec aufs.StorageSpec) (aufs.Sto
 
 	id := spec.Id
 
-	p.storages[spec] = storage.NewStorager(id, storager)
+	p.storages[spec] = NewStorager(id, storager)
 	return p.storages[spec], nil
 }

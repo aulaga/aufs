@@ -1,26 +1,13 @@
-package storage
+package internal
 
 import (
 	"fmt"
-	aufs "github.com/aulaga/cloud/src/filesystem"
+	aufs "github.com/aulaga/cloud/src"
 	"io/fs"
 	"path/filepath"
 	"strings"
 	"time"
 )
-
-type mount struct {
-	storage aufs.Storage
-	point   string
-}
-
-func (m mount) Storage() aufs.Storage {
-	return m.storage
-}
-
-func (m mount) Point() string {
-	return m.point
-}
 
 type Filesystem struct {
 	id              string
@@ -164,10 +151,6 @@ func (f *Filesystem) ListDir(path string, recursive bool) (infos []aufs.NodeInfo
 	}
 
 	return list, err
-}
-
-func (f *Filesystem) Location() string {
-	return "/"
 }
 
 // Filesystem act as file

@@ -1,8 +1,8 @@
-package storage
+package internal
 
 import (
 	"fmt"
-	aufs "github.com/aulaga/cloud/src/filesystem"
+	aufs "github.com/aulaga/cloud/src"
 	"io"
 	"path/filepath"
 	"strings"
