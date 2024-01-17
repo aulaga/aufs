@@ -23,7 +23,7 @@ func NewFilesystem(id string, root aufs.Storage, mounts []aufs.Mount) *Filesyste
 		id:              id,
 		root:            root,
 		mounts:          mounts,
-		eventPropagator: &EventPropagator{events: map[Event]bool{}},
+		eventPropagator: &EventPropagator{events: []Event{}},
 	}
 }
 
@@ -40,6 +40,8 @@ func (f *Filesystem) FlushEvents() {
 }
 
 func (f *Filesystem) StorageForPath(filePath string) (aufs.Storage, string) {
+	filePath = filepath.Clean(filePath)
+
 	for _, mount := range f.mounts {
 		// FIXME clean-up mount-point evaluation
 		relPath, err := filepath.Rel(mount.Point(), filePath)
@@ -102,14 +104,14 @@ func (f *Filesystem) Copy(srcPath string, dstPath string) (err error) {
 			f.eventPropagator.AddEvent(ChangedEvent(dstPath))
 		}
 	}()
-	srcStorage, srcPath := f.StorageForPath(srcPath)
-	dstStorage, dstPath := f.StorageForPath(dstPath)
+	srcStorage, srcRelPath := f.StorageForPath(srcPath)
+	dstStorage, dstRelPath := f.StorageForPath(dstPath)
 
 	if srcStorage == dstStorage {
-		return srcStorage.Copy(srcPath, dstPath)
+		return srcStorage.Copy(srcRelPath, dstRelPath)
 	}
 
-	return ManualCopy(srcStorage, dstStorage, srcPath, dstPath)
+	return ManualCopy(srcStorage, dstStorage, srcRelPath, dstRelPath)
 }
 
 func (f *Filesystem) Move(srcPath string, dstPath string) (err error) {
@@ -119,11 +121,12 @@ func (f *Filesystem) Move(srcPath string, dstPath string) (err error) {
 		}
 	}()
 
+	fmt.Println("FS Move > ", srcPath, dstPath)
 	srcStorage, relSrcPath := f.StorageForPath(srcPath)
 	dstStorage, relDstPath := f.StorageForPath(dstPath)
 
 	if srcStorage == dstStorage {
-		return srcStorage.Move(srcPath, dstPath)
+		return srcStorage.Move(relSrcPath, relDstPath)
 	}
 
 	err = ManualCopy(srcStorage, dstStorage, relSrcPath, relDstPath)
@@ -140,7 +143,7 @@ func (f *Filesystem) Move(srcPath string, dstPath string) (err error) {
 		return err
 	}
 
-	return srcStorage.Delete(relSrcPath)
+	return ManualDelete(srcStorage, relSrcPath)
 }
 
 func (f *Filesystem) ListDir(path string, recursive bool) (infos []aufs.NodeInfo, err error) {

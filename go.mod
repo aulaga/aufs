@@ -3,9 +3,11 @@ module github.com/aulaga/cloud
 go 1.19
 
 require (
-	github.com/beyondstorage/go-storage/v4 v4.8.0
 	github.com/go-chi/chi/v5 v5.0.10
+	github.com/google/uuid v1.3.0
 	go.beyondstorage.io/services/fs/v4 v4.0.0
+	go.beyondstorage.io/services/memory v0.4.0
+	go.beyondstorage.io/v5 v5.0.0
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 )
 
@@ -22,7 +24,6 @@ require (
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/urfave/cli/v2 v2.3.0 // indirect
-	go.beyondstorage.io/v5 v5.0.0 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 	golang.org/x/tools v0.1.1 // indirect

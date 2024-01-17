@@ -1,15 +1,13 @@
 package storager
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	aufs "github.com/aulaga/cloud/src"
 	"github.com/aulaga/cloud/src/internal"
+	"github.com/aulaga/cloud/src/storager/writers"
 	"go.beyondstorage.io/v5/pairs"
 	"go.beyondstorage.io/v5/types"
-	"io"
-	"io/fs"
 	"strings"
 )
 
@@ -32,103 +30,6 @@ func getObjectInfo(node *Object) aufs.NodeInfo {
 	)
 }
 
-type file struct {
-	id      string
-	path    string
-	storage StoragerWrapper
-	offset  int64
-}
-
-var _ aufs.File = &file{}
-
-func newFile(storage StoragerWrapper, path string) aufs.File {
-	return &file{
-		id:      path,
-		path:    path,
-		storage: storage,
-		offset:  0,
-	}
-}
-
-func (f *file) storager() types.Storager {
-	return f.storage.storager
-}
-
-func (f *file) Path() string {
-	return f.id
-}
-
-func (f *file) Storage() aufs.Storage {
-	return f.storage
-}
-
-func (f *file) Write(p []byte) (int, error) {
-	buf := bytes.NewBuffer(p)
-	n := int64(len(p))
-	n64, err := f.storager().Write(f.path, buf, n, pairs.WithOffset(f.offset))
-	f.offset += n64
-
-	return int(n64), err
-}
-
-func (f *file) Read(p []byte) (int, error) {
-	var buf bytes.Buffer
-	n, err := f.storager().Read(f.path, &buf, pairs.WithOffset(f.offset), pairs.WithSize(int64(len(p))))
-	if err != nil {
-		return 0, err
-	}
-	f.offset += n
-
-	return buf.Read(p)
-}
-
-func (f *file) Seek(offset int64, whence int) (int64, error) {
-	stat, err := f.Stat()
-	if err != nil {
-		return 0, err
-	}
-
-	if whence == io.SeekStart {
-		f.offset = offset
-	}
-
-	if whence == io.SeekEnd {
-		f.offset = stat.Size() - offset
-	}
-
-	if whence == io.SeekCurrent {
-		f.offset += offset
-	}
-
-	return f.offset, nil
-}
-
-func (f *file) Close() error {
-	return nil
-}
-
-func (f *file) Stat() (fs.FileInfo, error) {
-	return f.storage.Stat(f.path)
-}
-
-func (f *file) Readdir(count int) ([]fs.FileInfo, error) {
-	infos, err := f.storage.ListDir(f.Path(), false)
-	if err != nil {
-		return nil, err
-	}
-
-	if count <= 0 || count > len(infos) {
-		count = len(infos)
-	}
-
-	fsInfos := make([]fs.FileInfo, count)
-	for i := 0; i < count; i++ {
-		fsInfos[i] = infos[i]
-	}
-
-	return fsInfos, nil
-}
-
 type StoragerWrapper struct {
 	id       string
 	storager types.Storager
@@ -141,21 +42,42 @@ func NewStorager(id string, storager types.Storager) aufs.Storage {
 	}
 }
 
-func (s StoragerWrapper) Id() string {
-	return s.storager.String()
+func (s *StoragerWrapper) Storager() types.Storager {
+	return s.storager
+}
+
+func (s *StoragerWrapper) Id() string {
+	return s.id
 }
 
 func sanitizePath(path string) string {
 	return strings.TrimLeft(path, "/\\")
 }
 
-func (s StoragerWrapper) Open(path string) (aufs.File, error) {
+func (s *StoragerWrapper) Open(path string) (aufs.File, error) {
 	path = sanitizePath(path)
-	f := newFile(s, path)
-	return f, nil
+
+	reader := newDefaultReader(s.storager, path)
+
+	var writer writers.Writer
+	appender, isAppender := s.storager.(types.Appender)
+	if isAppender {
+		writer = writers.NewAppender(appender, path)
+	}
+
+	if writer == nil {
+		writer = writers.NewTempBuffer(s.storager, path)
+	}
+
+	return &FileReadWriter{
+		writer:   writer,
+		reader:   reader,
+		storager: s,
+		path:     path,
+	}, nil
 }
 
-func (s StoragerWrapper) Stat(path string) (aufs.NodeInfo, error) {
+func (s *StoragerWrapper) Stat(path string) (aufs.NodeInfo, error) {
 	path = sanitizePath(path)
 	obj, err := s.storager.Stat(path)
 	if err != nil {
@@ -165,12 +87,13 @@ func (s StoragerWrapper) Stat(path string) (aufs.NodeInfo, error) {
 	return getObjectInfo(obj), err
 }
 
-func (s StoragerWrapper) Delete(path string) error {
+func (s *StoragerWrapper) Delete(path string) error {
 	path = sanitizePath(path)
+
 	return s.storager.Delete(path)
 }
 
-func (s StoragerWrapper) Copy(srcPath string, dstPath string) error {
+func (s *StoragerWrapper) Copy(srcPath string, dstPath string) error {
 	srcPath = sanitizePath(srcPath)
 	dstPath = sanitizePath(dstPath)
 	info, err := s.Stat(srcPath)
@@ -192,7 +115,7 @@ func (s StoragerWrapper) Copy(srcPath string, dstPath string) error {
 }
 
 // TODO implement Move between different storages
-func (s StoragerWrapper) Move(srcPath string, dstPath string) error {
+func (s *StoragerWrapper) Move(srcPath string, dstPath string) error {
 	srcPath = sanitizePath(srcPath)
 	dstPath = sanitizePath(dstPath)
 	mover, ok := s.storager.(types.Mover)
@@ -203,7 +126,7 @@ func (s StoragerWrapper) Move(srcPath string, dstPath string) error {
 	return mover.Move(srcPath, dstPath)
 }
 
-func (s StoragerWrapper) ListDir(path string, recursive bool) ([]aufs.NodeInfo, error) {
+func (s *StoragerWrapper) ListDir(path string, recursive bool) ([]aufs.NodeInfo, error) {
 	path = sanitizePath(path)
 	// TODO for recursion maybe listmode prefix can be used here
 	iterator, err := s.storager.List(path, pairs.WithListMode(types.ListModeDir))
@@ -227,7 +150,7 @@ func (s StoragerWrapper) ListDir(path string, recursive bool) ([]aufs.NodeInfo, 
 	return infos, nil
 }
 
-func (s StoragerWrapper) MkDir(path string) (aufs.NodeInfo, error) {
+func (s *StoragerWrapper) MkDir(path string) (aufs.NodeInfo, error) {
 	path = sanitizePath(path)
 	direr, ok := s.storager.(types.Direr)
 	if !ok {

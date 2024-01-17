@@ -10,6 +10,7 @@ import (
 
 func CreateFile(storage aufs.Storage, path string, reader io.Reader) error {
 	file, err := storage.Open(path)
+	defer file.Close()
 	if err != nil {
 		return err
 	}

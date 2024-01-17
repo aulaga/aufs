@@ -8,8 +8,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.service
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
     ports:
       - "8080:8080"
+      - "40000:40000"
       - "80:80"
     networks:
       - aulaga

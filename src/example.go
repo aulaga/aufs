@@ -31,7 +31,7 @@ func (s SampleFs) Root() StorageSpec {
 }
 
 func (s SampleFs) Listener() EventListener {
-	return nil // &bus{}
+	return &bus{}
 }
 
 func (s SampleFs) Mounts() []MountSpec {
@@ -51,7 +51,7 @@ func (s SampleFs) Mounts() []MountSpec {
 		{
 			MountPoint: "/test2/",
 			Storage: StorageSpec{
-				Uri: "@fs:///aulaga/test",
+				Uri: "@memory:///",
 			},
 		},
 	}
