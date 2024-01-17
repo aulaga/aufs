@@ -1,9 +1,10 @@
-package audav
+package webdav
 
 import (
 	"context"
 	"fmt"
-	aufs "github.com/aulaga/cloud/src/filesystem"
+	aufs "github.com/aulaga/cloud/src"
+	"github.com/aulaga/cloud/src/storager"
 	"golang.org/x/net/webdav"
 	"log"
 	"net/http"
@@ -89,32 +90,6 @@ func (f FileSystem) Rename(ctx context.Context, oldName, newName string) error {
 	return err
 }
 
-type CaptureResponseWriter struct {
-	w     http.ResponseWriter
-	bytes []byte
-}
-
-func (c *CaptureResponseWriter) Print() {
-	if len(c.bytes) > 5000 {
-		fmt.Println("Captured response too long to print")
-	} else {
-		fmt.Println("Captured response", string(c.bytes))
-	}
-}
-
-func (c *CaptureResponseWriter) Header() http.Header {
-	return c.w.Header()
-}
-
-func (c *CaptureResponseWriter) Write(bytes []byte) (int, error) {
-	c.bytes = append(c.bytes, bytes...)
-	return c.w.Write(bytes)
-}
-
-func (c *CaptureResponseWriter) WriteHeader(statusCode int) {
-	c.w.WriteHeader(statusCode)
-}
-
 type MyHandler struct {
 	h  http.Handler
 	fs *FileSystem
@@ -127,9 +102,7 @@ func (m MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, CtxAulagaFs, fs)
 	r = r.WithContext(ctx)
 
-	captureW := &CaptureResponseWriter{w: w}
-	m.h.ServeHTTP(captureW, r)
-	captureW.Print()
+	m.h.ServeHTTP(w, r)
 
 	aulagaFs, err := m.fs.fsFromContext(ctx)
 	if err == nil {
@@ -137,7 +110,12 @@ func (m MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewWebdavHandler(provider aufs.StorageProvider) http.Handler {
+func Handler() http.Handler {
+	defaultProvider := storager.Provider()
+	return HandlerWithProvider(defaultProvider)
+}
+
+func HandlerWithProvider(provider aufs.StorageProvider) http.Handler {
 	fs := newFileSystem(provider)
 
 	webdavHandler := &webdav.Handler{

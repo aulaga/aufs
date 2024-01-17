@@ -4,6 +4,7 @@ tmp_dir = "../tmp"
 
 [build]
 args_bin = []
+#full_bin = "dlv --listen=:40000 --headless=true --api-version=2 --accept-multiclient exec /bin/aulaga --"
 bin = "/bin/aulaga"
 cmd = "go build -o /bin/aulaga /aulaga/cmd/"
 delay = 1000
@@ -12,7 +13,6 @@ exclude_file = []
 exclude_regex = ["_test.go"]
 exclude_unchanged = false
 follow_symlink = false
-full_bin = ""
 include_dir = []
 include_ext = ["go"]
 kill_delay = "0s"

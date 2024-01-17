@@ -1,8 +1,8 @@
-package storage
+package internal
 
 import (
 	"fmt"
-	aufs "github.com/aulaga/cloud/src/filesystem"
+	aufs "github.com/aulaga/cloud/src"
 	"io"
 	"path/filepath"
 	"strings"
@@ -10,6 +10,7 @@ import (
 
 func CreateFile(storage aufs.Storage, path string, reader io.Reader) error {
 	file, err := storage.Open(path)
+	defer file.Close()
 	if err != nil {
 		return err
 	}

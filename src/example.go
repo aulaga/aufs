@@ -1,6 +1,8 @@
 package aufs
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // TODO remove file
 
@@ -34,7 +36,7 @@ func (s SampleFs) Listener() EventListener {
 
 func (s SampleFs) Mounts() []MountSpec {
 	return []MountSpec{
-		/*{
+		{
 			MountPoint: "/tmp/",
 			Storage: StorageSpec{
 				Uri: "@fs:///aulaga/tmp",
@@ -49,19 +51,8 @@ func (s SampleFs) Mounts() []MountSpec {
 		{
 			MountPoint: "/test2/",
 			Storage: StorageSpec{
-				Uri: "@fs:///aulaga/test",
+				Uri: "@memory:///",
 			},
 		},
-		{
-			MountPoint: "/mem/",
-			Storage: StorageSpec{
-				Uri: "@memory:///aulaga/files",
-			},
-		},*/
 	}
-}
-
-type StorageProvider interface {
-	ProvideFileSystem(FileSystemSpec) (Filesystem, error)
-	ProvideStorage(StorageSpec) (Storage, error)
 }
