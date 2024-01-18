@@ -1,8 +1,8 @@
 package storager
 
 import (
-	aufs "github.com/aulaga/cloud/src"
-	"github.com/aulaga/cloud/src/storager/writers"
+	aufs "github.com/aulaga/aufs/src"
+	"github.com/aulaga/aufs/src/storager/writers"
 	"io/fs"
 )
 

@@ -1,4 +1,4 @@
-module github.com/aulaga/cloud
+module github.com/aulaga/aufs
 
 go 1.19
 

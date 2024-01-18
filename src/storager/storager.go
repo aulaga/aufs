@@ -3,9 +3,9 @@ package storager
 import (
 	"errors"
 	"fmt"
-	aufs "github.com/aulaga/cloud/src"
-	"github.com/aulaga/cloud/src/internal"
-	"github.com/aulaga/cloud/src/storager/writers"
+	aufs "github.com/aulaga/aufs/src"
+	"github.com/aulaga/aufs/src/internal"
+	"github.com/aulaga/aufs/src/storager/writers"
 	"go.beyondstorage.io/v5/pairs"
 	"go.beyondstorage.io/v5/types"
 	"strings"
