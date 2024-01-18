@@ -121,7 +121,6 @@ func (f *Filesystem) Move(srcPath string, dstPath string) (err error) {
 		}
 	}()
 
-	fmt.Println("FS Move > ", srcPath, dstPath)
 	srcStorage, relSrcPath := f.StorageForPath(srcPath)
 	dstStorage, relDstPath := f.StorageForPath(dstPath)
 

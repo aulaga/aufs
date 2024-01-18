@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	aufs "github.com/aulaga/cloud/src"
 	"github.com/aulaga/cloud/src/webdav"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -18,6 +19,15 @@ func main() {
 	chi.RegisterMethod("LOCK")
 	chi.RegisterMethod("UNLOCK")
 	r := chi.NewRouter()
+
+	r.Use(func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			ctx = aufs.Context(ctx, &SampleFs{})
+			r = r.WithContext(ctx)
+			handler.ServeHTTP(w, r)
+		})
+	})
 
 	r.Mount("/dav", webdav.Handler())
 

@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+const SpecContextKey = "aulaga_fs"
+
+func Context(ctx context.Context, spec FileSystemSpec) context.Context {
+	return context.WithValue(ctx, SpecContextKey, spec)
+}
+
 type StorageSpec struct {
 	Id  string
 	Uri string

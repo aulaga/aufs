@@ -1,7 +1,8 @@
-package aufs
+package main
 
 import (
 	"fmt"
+	"github.com/aulaga/cloud/src"
 )
 
 // TODO remove file
@@ -24,33 +25,33 @@ func (b bus) Deleted(path string) {
 type SampleFs struct {
 }
 
-func (s SampleFs) Root() StorageSpec {
-	return StorageSpec{
+func (s SampleFs) Root() aufs.StorageSpec {
+	return aufs.StorageSpec{
 		Uri: "@fs:///aulaga/files",
 	}
 }
 
-func (s SampleFs) Listener() EventListener {
+func (s SampleFs) Listener() aufs.EventListener {
 	return &bus{}
 }
 
-func (s SampleFs) Mounts() []MountSpec {
-	return []MountSpec{
+func (s SampleFs) Mounts() []aufs.MountSpec {
+	return []aufs.MountSpec{
 		{
 			MountPoint: "/tmp/",
-			Storage: StorageSpec{
+			Storage: aufs.StorageSpec{
 				Uri: "@fs:///aulaga/tmp",
 			},
 		},
 		{
 			MountPoint: "/test/",
-			Storage: StorageSpec{
+			Storage: aufs.StorageSpec{
 				Uri: "@fs:///aulaga/test",
 			},
 		},
 		{
 			MountPoint: "/test2/",
-			Storage: StorageSpec{
+			Storage: aufs.StorageSpec{
 				Uri: "@memory:///",
 			},
 		},

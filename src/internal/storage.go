@@ -44,7 +44,6 @@ func copyDir(srcStorage aufs.Storage, dstStorage aufs.Storage, srcPath string, d
 
 // ManualCopy manually copies a path from srcStorage to dstStorage. This function is storage-agnostic.
 func ManualCopy(srcStorage aufs.Storage, dstStorage aufs.Storage, srcPath string, dstPath string) error {
-	fmt.Println("Manual copy", srcPath, dstPath)
 	info, err := srcStorage.Stat(srcPath)
 	if err != nil {
 		return err

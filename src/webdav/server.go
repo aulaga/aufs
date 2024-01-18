@@ -11,8 +11,6 @@ import (
 	"os"
 )
 
-const CtxAulagaFs = "aulaga_fs"
-
 type FileSystem struct {
 	storageProvider aufs.StorageProvider
 }
@@ -24,7 +22,7 @@ func newFileSystem(storageProvider aufs.StorageProvider) *FileSystem {
 }
 
 func (f FileSystem) fsFromContext(ctx context.Context) (aufs.Filesystem, error) {
-	ctxVal := ctx.Value(CtxAulagaFs)
+	ctxVal := ctx.Value(aufs.SpecContextKey)
 	fsSpec, ok := ctxVal.(aufs.FileSystemSpec)
 	if !ok {
 		return nil, fmt.Errorf("aulaga filesystem not in context") // TODO type-wrap this error
@@ -96,15 +94,9 @@ type MyHandler struct {
 }
 
 func (m MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fs := &aufs.SampleFs{}
-
-	ctx := r.Context()
-	ctx = context.WithValue(ctx, CtxAulagaFs, fs)
-	r = r.WithContext(ctx)
-
 	m.h.ServeHTTP(w, r)
 
-	aulagaFs, err := m.fs.fsFromContext(ctx)
+	aulagaFs, err := m.fs.fsFromContext(r.Context())
 	if err == nil {
 		aulagaFs.FlushEvents()
 	}
